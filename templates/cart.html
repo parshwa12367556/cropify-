@@ -206,12 +206,20 @@
             <div class="navbar-nav me-auto">
                 <a class="nav-link" href="{{ url_for('index') }}">Home</a>
                 <a class="nav-link" href="{{ url_for('product') }}">Products</a>
-                <a class="nav-link" href="{{ url_for('cart') }}">Cart <span id="cart-count" class="badge bg-light text-dark">0</span></a>
-                <a class="nav-link" href="{{ url_for('feedback_page') }}">Feedback</a>
+                <a class="nav-link" href="{{ url_for('cart') }}">Cart</a>
+                <a class="nav-link" href="{{ url_for('feedback') }}">Feedback</a>
             </div>
             <div class="navbar-nav">
-                <a class="nav-link" href="{{ url_for('login') }}">Login</a>
-                <a class="nav-link" href="{{ url_for('register') }}">Register</a>
+                {% if 'user_id' in session %}
+                    {% if session.user_role == 'admin' %}
+                        <a class="nav-link" href="{{ url_for('admin') }}">Admin</a>
+                    {% endif %}
+                    <span class="navbar-text me-3">Hello, {{ session.user_name }}</span>
+                    <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+                {% else %}
+                    <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                    <a class="nav-link" href="{{ url_for('register') }}">Register</a>
+                {% endif %}
             </div>
         </div>
     </nav>
@@ -229,13 +237,24 @@
                         <th>Total</th>
                     </tr>
                 </thead>
-                <tbody id="cart-items">
-                    <!-- Cart items will be injected here by JavaScript -->
+                <tbody>
+                    <tr>
+                        <td>Organic Apples</td>
+                        <td>₹150</td>
+                        <td>2</td>
+                        <td>₹300</td>
+                    </tr>
+                    <tr>
+                        <td>Fresh Tomatoes</td>
+                        <td>₹80</td>
+                        <td>1</td>
+                        <td>₹80</td>
+                    </tr>
                 </tbody>
                 <tfoot>
                     <tr>
                         <th colspan="3" class="text-end">Total Amount:</th>
-                        <th id="cart-total">₹0</th>
+                        <th>₹380</th>
                     </tr>
                 </tfoot>
             </table>
@@ -265,7 +284,7 @@
                     <ul class="footer-links">
                         <li><a href="{{ url_for('index') }}">Home</a></li>
                         <li><a href="{{ url_for('product') }}">Products</a></li>
-                        <li><a href="{{ url_for('feedback_page') }}">Feedback</a></li>
+                        <li><a href="{{ url_for('feedback') }}">Feedback</a></li>
                         <li><a href="{{ url_for('login') }}">Login</a></li>
                         <li><a href="{{ url_for('register') }}">Register</a></li>
                     </ul>
@@ -290,64 +309,11 @@
                     </ul>
                 </div>
 
-            </div>
-            <div class="copyright">
-                <p>&copy; 2024 Cropify. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
+                <footer>
+                    <p>&copy; 2024 Cropify. All rights reserved.</p>
+                </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            loadCartItems();
-            updateCartCount();
-        });
-
-        function getCart() {
-            return JSON.parse(localStorage.getItem('cropifyCart')) || [];
-        }
-
-        function updateCartCount() {
-            const cart = getCart();
-            const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
-            document.getElementById('cart-count').textContent = cartCount;
-        }
-
-        function loadCartItems() {
-            const cart = getCart();
-            const cartItemsContainer = document.getElementById('cart-items');
-            const cartTotalElement = document.getElementById('cart-total');
-            let total = 0;
-
-            cartItemsContainer.innerHTML = ''; // Clear existing items
-
-            if (cart.length === 0) {
-                cartItemsContainer.innerHTML = '<tr><td colspan="4" class="text-center">Your cart is empty.</td></tr>';
-                cartTotalElement.textContent = '₹0';
-                return;
-            }
-
-            cart.forEach(item => {
-                const itemTotal = item.price * item.quantity;
-                total += itemTotal;
-
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td>
-                        <img src="${item.image}" alt="${item.name}" style="width: 50px; height: 50px; object-fit: cover; margin-right: 10px;">
-                        ${item.name}
-                    </td>
-                    <td>₹${item.price.toFixed(2)}</td>
-                    <td>${item.quantity}</td>
-                    <td>₹${itemTotal.toFixed(2)}</td>
-                `;
-                cartItemsContainer.appendChild(row);
-            });
-
-            cartTotalElement.textContent = `₹${total.toFixed(2)}`;
-        }
-    </script>
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

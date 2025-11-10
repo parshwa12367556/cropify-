@@ -1,178 +1,346 @@
-from flask import Flask, request, jsonify, render_template
-import sqlite3
+# app.py
+from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
+import os
 
-app = Flask(__name__)
-app.secret_key = 'your_super_secret_key' # You can change this to any random string
+app = Flask(__name__, template_folder='templates')
+app.config['SECRET_KEY'] = 'your-secret-key-here'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# --- Database Setup ---
-def get_db_connection():
-    """Creates a connection to the SQLite database."""
-    conn = sqlite3.connect('database.db')
-    conn.row_factory = sqlite3.Row # This allows accessing columns by name
-    return conn
+db = SQLAlchemy(app)
 
-def init_db():
-    """Initializes the database and creates tables if they don't exist."""
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    # Create users table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL,
-            email TEXT NOT NULL UNIQUE, password TEXT NOT NULL, role TEXT NOT NULL
+# Database Models
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)
+    password = db.Column(db.String(200), nullable=False)
+    role = db.Column(db.String(20), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Product(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    category = db.Column(db.String(50), nullable=False)
+    price = db.Column(db.Float, nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+    image = db.Column(db.String(200))
+    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Cart(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    buyer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    product_id = db.Column(db.Integer, db.ForeignKey('product.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False, default=1)
+
+class Order(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    buyer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    total_amount = db.Column(db.Float, nullable=False)
+    payment_mode = db.Column(db.String(50), nullable=False)
+    status = db.Column(db.String(20), default='Pending')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+class Feedback(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    buyer_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    rating = db.Column(db.Integer, nullable=False)
+    message = db.Column(db.Text, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# Create tables
+with app.app_context():
+    db.create_all()
+    # Create admin user if not exists
+    if not User.query.filter_by(role='admin').first():
+        admin_user = User(
+            name='Admin',
+            email='admin@agrimarket.com',
+            password=generate_password_hash('admin123'),
+            role='admin'
         )
-    ''')
-    # Create products table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS products (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, category TEXT NOT NULL,
-            price REAL NOT NULL, quantity INTEGER NOT NULL, image TEXT
-        )
-    ''')
-    # Create feedback table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS feedback (
-            id INTEGER PRIMARY KEY AUTOINCREMENT, rating INTEGER NOT NULL, message TEXT NOT NULL
-        )
-    ''')
-    # Create orders table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS orders (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            payment_mode TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    conn.commit()
-    conn.close()
+        db.session.add(admin_user)
+        db.session.commit()
 
-# Initialize the database when the app starts
-init_db()
-
-
-# --- API Endpoints (for JavaScript to call) ---
-
-@app.route('/api/register', methods=['POST'])
-def api_register():
-    data = request.get_json()
-    name, email, password, role = data.get('name'), data.get('email'), data.get('password'), data.get('role')
-    if not all([name, email, password, role]):
-        return jsonify({'message': 'Missing required fields'}), 400
-    try:
-        conn = get_db_connection()
-        # In a real app, you MUST hash the password here before saving
-        conn.execute('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)', (name, email, password, role))
-        conn.commit()
-        conn.close()
-        return jsonify({'message': 'Registration successful! Please log in.'}), 201
-    except sqlite3.IntegrityError:
-        return jsonify({'message': 'This email is already registered.'}), 409
-    except Exception as e:
-        return jsonify({'message': f'An internal error occurred: {e}'}), 500
-
-@app.route('/api/feedback', methods=['POST'])
-def api_feedback():
-    data = request.get_json()
-    rating, message = data.get('rating'), data.get('message')
-    if not all([rating, message]):
-        return jsonify({'message': 'Rating and message are required.'}), 400
-    try:
-        conn = get_db_connection()
-        conn.execute('INSERT INTO feedback (rating, message) VALUES (?, ?)', (rating, message))
-        conn.commit()
-        conn.close()
-        return jsonify({'message': 'Thank you for your feedback!'}), 201
-    except Exception as e:
-        return jsonify({'message': f'An internal error occurred: {e}'}), 500
-
-@app.route('/api/products', methods=['POST'])
-def api_add_product():
-    data = request.get_json()
-    name, category, price, quantity, image = data.get('name'), data.get('category'), data.get('price'), data.get('quantity'), data.get('image')
-    if not all([name, category, price, quantity]):
-        return jsonify({'message': 'Missing required product fields'}), 400
-    try:
-        conn = get_db_connection()
-        conn.execute('INSERT INTO products (name, category, price, quantity, image) VALUES (?, ?, ?, ?, ?)', (name, category, float(price), int(quantity), image))
-        conn.commit()
-        conn.close()
-        return jsonify({'message': 'Product added successfully!'}), 201
-    except Exception as e:
-        return jsonify({'message': f'An internal error occurred: {e}'}), 500
-
-@app.route('/api/products', methods=['GET'])
-def api_get_products():
-    """API endpoint to get all products."""
-    try:
-        conn = get_db_connection()
-        products = conn.execute('SELECT * FROM products').fetchall()
-        conn.close()
-        return jsonify([dict(row) for row in products]), 200
-    except Exception as e:
-        return jsonify({'message': f'An internal error occurred: {e}'}), 500
-
-@app.route('/api/admin/dashboard-data', methods=['GET'])
-def api_admin_data():
-    try:
-        conn = get_db_connection()
-        users = [dict(row) for row in conn.execute('SELECT id, name, email, role FROM users').fetchall()]
-        products = [dict(row) for row in conn.execute('SELECT * FROM products').fetchall()]
-        feedback = [dict(row) for row in conn.execute('SELECT rating, message FROM feedback').fetchall()]
-        conn.close()
-        return jsonify({'users': users, 'products': products, 'feedback': feedback}), 200
-    except Exception as e:
-        return jsonify({'message': f'An internal error occurred: {e}'}), 500
-
-
-# --- HTML Page Routes (for browser navigation) ---
+# Routes
 @app.route('/')
-def index(): return render_template('index.html')
-@app.route('/login')
-def login(): return render_template('login.html')
-@app.route('/register')
-def register(): return render_template('register.html')
+def index():
+    return render_template('index.html')
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+        
+        user = User.query.filter_by(email=email).first()
+        
+        if user and check_password_hash(user.password, password):
+            session['user_id'] = user.id
+            session['user_name'] = user.name
+            session['user_role'] = user.role
+            
+            flash('Login successful!', 'success')
+            
+            if user.role == 'admin':
+                return redirect(url_for('admin'))
+            elif user.role == 'seller':
+                return redirect(url_for('product'))
+            else:
+                return redirect(url_for('product'))
+        else:
+            flash('Invalid email or password', 'error')
+    
+    return render_template('login.html')
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        name = request.form['name']
+        email = request.form['email']
+        password = request.form['password']
+        role = request.form['role']
+        
+        if User.query.filter_by(email=email).first():
+            flash('Email already registered', 'error')
+            return redirect(url_for('register'))
+        
+        new_user = User(
+            name=name,
+            email=email,
+            password=generate_password_hash(password),
+            role=role
+        )
+        
+        db.session.add(new_user)
+        db.session.commit()
+        
+        flash('Registration successful! Please login.', 'success')
+        return redirect(url_for('login'))
+    
+    return render_template('register.html')
+
 @app.route('/product')
-def product(): return render_template('product.html')
-@app.route('/feedback')
-def feedback_page(): return render_template('feedback.html')
-@app.route('/admin')
-def admin(): return render_template('admin.html')
-@app.route('/addproduct')
-def addproduct(): return render_template('addproduct.html')
+def product():
+    if 'user_id' not in session:
+        flash('Please login first', 'error')
+        return redirect(url_for('login'))
+    
+    category = request.args.get('category', 'all')
+    
+    if category == 'all':
+        product = Product.query.all()
+    else:
+        product = Product.query.filter_by(category=category).all()
+    return render_template('product.html', product=product, category=category)
+
+@app.route('/addproduct', methods=['GET', 'POST'])
+def addproduct():
+    if 'user_id' not in session or session['user_role'] != 'seller':
+        flash('Access denied. Seller only.', 'error')
+        return redirect(url_for('index'))
+    
+    if request.method == 'POST':
+        name = request.form['name']
+        category = request.form['category']
+        price = float(request.form['price'])
+        quantity = int(request.form['quantity'])
+        image = request.form['image'] or None
+        
+        new_product = Product(
+            name=name,
+            category=category,
+            price=price,
+            quantity=quantity,
+            image=image,
+            seller_id=session['user_id']
+        )
+        
+        db.session.add(new_product)
+        db.session.commit()
+        
+        flash(f'Product "{name}" added successfully with ID: {new_product.id}', 'success')
+        return redirect(url_for('product'))
+    
+    return render_template('addproduct.html')
+
+@app.route('/add_to_cart/<int:product_id>')
+def add_to_cart(product_id):
+    if 'user_id' not in session or session['user_role'] != 'buyer':
+        flash('Please login as a buyer first', 'error')
+        return redirect(url_for('login'))
+    
+    product = Product.query.get_or_404(product_id)
+    
+    cart_item = Cart.query.filter_by(
+        buyer_id=session['user_id'], 
+        product_id=product_id
+    ).first()
+    
+    if cart_item:
+        cart_item.quantity += 1
+    else:
+        cart_item = Cart(
+            buyer_id=session['user_id'],
+            product_id=product_id,
+            quantity=1
+        )
+        db.session.add(cart_item)
+    
+    db.session.commit()
+    flash('Product added to cart!', 'success')
+    return redirect(url_for('product'))
+
 @app.route('/cart')
-def cart(): return render_template('cart.html')
+def cart():
+    if 'user_id' not in session or session['user_role'] != 'buyer':
+        flash('Please login as a buyer first', 'error')
+        return redirect(url_for('login'))
+    
+    cart_items = Cart.query.filter_by(buyer_id=session['user_id']).all()
+    cart_product = []
+    total_amount = 0
+    
+    for item in cart_items:
+        product = Product.query.get(item.product_id)
+        item_total = product.price * item.quantity
+        total_amount += item_total
+        cart_product.append({
+            'id': product.id,
+            'name': product.name,
+            'price': product.price,
+            'quantity': item.quantity,
+            'total': item_total,
+            'image': product.image
+        })
+    
+    return render_template('cart.html', cart_product=cart_product, total_amount=total_amount)
 
-@app.route('/checkout', methods=['GET'])
+@app.route('/checkout', methods=['GET', 'POST'])
 def checkout():
-    # In a real app, you'd pass cart totals etc. to the checkout page
-    return render_template('checkout.html')
+    if 'user_id' not in session or session['user_role'] != 'buyer':
+        flash('Please login as a buyer first', 'error')
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        payment_mode = request.form['payment_mode']
+        
+        cart_items = Cart.query.filter_by(buyer_id=session['user_id']).all()
+        total_amount = 0
+        
+        for item in cart_items:
+            product = Product.query.get(item.product_id)
+            total_amount += product.price * item.quantity
+        
+        new_order = Order(
+            buyer_id=session['user_id'],
+            total_amount=total_amount,
+            payment_mode=payment_mode,
+            status='Confirmed'
+        )
+        
+        db.session.add(new_order)
+        Cart.query.filter_by(buyer_id=session['user_id']).delete()
+        db.session.commit()
+        
+        flash('Order placed successfully!', 'success')
+        return redirect(url_for('orderconformation', order_id=new_order.id))
+    
+    cart_items = Cart.query.filter_by(buyer_id=session['user_id']).all()
+    total_amount = 0
+    
+    for item in cart_items:
+        product = Product.query.get(item.product_id)
+        total_amount += product.price * item.quantity
+    
+    return render_template('checkout.html', total_amount=total_amount)
 
-@app.route('/order-confirmation', methods=['POST'])
-def order_confirmation():
-    payment_mode = request.form.get('payment_mode')
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('INSERT INTO orders (payment_mode) VALUES (?)', (payment_mode,))
-    order_id = cursor.lastrowid
-    conn.commit()
-    order = conn.execute('SELECT * FROM orders WHERE id = ?', (order_id,)).fetchone()
-    conn.close()
+@app.route('/orderconformation/<int:order_id>')
+def orderconformation(order_id):
+    if 'user_id' not in session:
+        flash('Please login to view your order', 'error')
+        return redirect(url_for('login'))
+    
+    order = Order.query.get_or_404(order_id)
     return render_template('orderconformation.html', order=order)
 
-@app.route('/thankyou')
-def thankyou(): return render_template('thankyou.html')
+
+@app.route('/feedback', methods=['GET', 'POST'])
+def feedback():
+    if 'user_id' not in session:
+        flash('Please login first', 'error')
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        rating = request.form['rating']
+        message = request.form['message']
+        
+        new_feedback = Feedback(
+            buyer_id=session['user_id'],
+            rating=rating,
+            message=message
+        )
+        
+        db.session.add(new_feedback)
+        db.session.commit()
+        
+        flash('Thank you for your feedback!', 'success')
+        return redirect(url_for('thankyou'))
+    
+    return render_template('feedback.html')
+
+@app.route('/admin')
+def admin():
+    if 'user_id' not in session or session['user_role'] != 'admin':
+        flash('Access denied. Admin only.', 'error')
+        return redirect(url_for('index'))
+    
+    today = datetime.now().date()
+    today_orders = Order.query.filter(
+        db.func.date(Order.created_at) == today
+    ).all()
+    
+    today_sales = sum(order.total_amount for order in today_orders)
+    all_orders = Order.query.all()
+    all_feedback = Feedback.query.all()
+    all_products = Product.query.all()
+    
+    return render_template('admin.html', 
+                         today_sales=today_sales,
+                         orders=all_orders,
+                         feedback=all_feedback,
+                         products=all_products)
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    flash('You have been logged out', 'info')
+    return redirect(url_for('index'))
+
+# Static Pages
 @app.route('/shipping_info')
-def shipping_info(): return render_template('shipping_info.html')
+def shipping_info():
+    return render_template('shipping_info.html')
+
 @app.route('/return_policy')
-def return_policy(): return render_template('return_policy.html')
+def return_policy():
+    return render_template('return_policy.html')
+
 @app.route('/faqs')
-def faqs(): return render_template('faqs.html')
+def faqs():
+    return render_template('faqs.html')
+
 @app.route('/privacy_policy')
-def privacy_policy(): return render_template('privacy_policy.html')
+def privacy_policy():
+    return render_template('privacy_policy.html')
+
 @app.route('/terms_and_conditions')
-def terms_and_conditions(): return render_template('terms_and_conditions.html')
-
-
+def terms_and_conditions():
+    return render_template('terms_and_conditions.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

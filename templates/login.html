@@ -206,12 +206,19 @@
             <div class="navbar-nav me-auto">
                 <a class="nav-link" href="{{ url_for('index') }}">Home</a>
                 <a class="nav-link" href="{{ url_for('product') }}">Products</a>
-                <a class="nav-link" href="{{ url_for('feedback_page') }}">Feedback</a>
-                <a class="nav-link" href="{{ url_for('cart') }}">Cart <span id="cart-count" class="badge bg-light text-dark">0</span></a>
+                <a class="nav-link" href="{{ url_for('feedback') }}">Feedback</a>
             </div>
             <div class="navbar-nav">
-                <a class="nav-link active" href="{{ url_for('login') }}">Login</a>
-                <a class="nav-link" href="{{ url_for('register') }}">Register</a>
+                {% if 'user_id' in session %}
+                    {% if session.user_role == 'admin' %}
+                        <a class="nav-link" href="{{ url_for('admin') }}">Admin</a>
+                    {% endif %}
+                    <span class="navbar-text me-3">Hello, {{ session.user_name }}</span>
+                    <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+                {% else %}
+                    <a class="nav-link active" href="{{ url_for('login') }}">Login</a>
+                    <a class="nav-link" href="{{ url_for('register') }}">Register</a>
+                {% endif %}
             </div>
         </div>
     </nav>
@@ -224,7 +231,7 @@
                         <h3 class="text-center">Login</h3>
                     </div>
                     <div class="card-body">
-                        <form id="loginForm">
+                        <form action="{{ url_for('login') }}" method="POST">
                             <div class="mb-3">
                                 <label for="email" class="form-label">Email</label>
                                 <input type="email" class="form-control" id="email" name="email" required>
@@ -248,13 +255,13 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-column">
-                    <h3>Cropify</h3>
+                    <h3>AgriMarketing</h3>
                     <p>Your one-stop destination for fresh farm products directly from farmers to your doorstep.</p>
                     <div class="social-links">
-                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
-                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                        <a href="#" aria-label="Pinterest"><i class="fab fa-pinterest"></i></a>
+                        <a href="https://www.facebook.com/mr_parshwa_patil/"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://www.twitter.com/mr_parshwa_patil/"><i class="fab fa-twitter"></i></a>
+                        <a href="https://www.instagram.com/mr_parshwa_patil/"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-pinterest"></i></a>
                     </div>
                 </div>
                 <div class="footer-column">
@@ -262,7 +269,7 @@
                     <ul class="footer-links">
                         <li><a href="{{ url_for('index') }}">Home</a></li>
                         <li><a href="{{ url_for('product') }}">Products</a></li>
-                        <li><a href="{{ url_for('feedback_page') }}">Feedback</a></li>
+                        <li><a href="{{ url_for('feedback') }}">Feedback</a></li>
                         <li><a href="{{ url_for('login') }}">Login</a></li>
                         <li><a href="{{ url_for('register') }}">Register</a></li>
                     </ul>
@@ -286,42 +293,12 @@
                         <li><i class="fas fa-clock"></i> Mon-Sun: 9:00 AM - 11:00 PM</li>
                     </ul>
                 </div>
-            </div>
-            <div class="copyright">
-                <p>&copy; 2024 Cropify. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            updateCartCount();
 
-            const loginForm = document.getElementById('loginForm');
-            loginForm.addEventListener('submit', function(event) {
-                event.preventDefault();
-                
-                // In a real app, you'd verify credentials with a server.
-                // Here, we'll simulate a successful login.
-                const email = document.getElementById('email').value;
-                const user = {
-                    name: email.split('@')[0], // Simple name generation
-                    email: email
-                };
-                localStorage.setItem('loggedInUser', JSON.stringify(user));
+                <footer>
+                    <p>&copy; 2024 Cropify. All rights reserved.</p>
+                </footer>
 
-                alert('Login successful! Welcome back.');
-                window.location.href = "{{ url_for('index') }}";
-            });
-        });
-
-        function getCart() { return JSON.parse(localStorage.getItem('cropifyCart')) || []; }
-        function updateCartCount() {
-            const cart = getCart();
-            const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
-            document.getElementById('cart-count').textContent = cartCount;
-        }
-    </script>
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

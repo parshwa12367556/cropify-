@@ -206,30 +206,39 @@
             <div class="navbar-nav me-auto">
                 <a class="nav-link" href="{{ url_for('index') }}">Home</a>
                 <a class="nav-link" href="{{ url_for('product') }}">Products</a>
-                <a class="nav-link" href="{{ url_for('feedback_page') }}">Feedback</a>
-                <a class="nav-link" href="{{ url_for('cart') }}">Cart <span id="cart-count" class="badge bg-light text-dark">0</span></a>
+                <a class="nav-link" href="{{ url_for('feedback') }}">Feedback</a>
             </div>
             <div class="navbar-nav">
-                <a class="nav-link" href="{{ url_for('login') }}">Login</a>
-                <a class="nav-link" href="{{ url_for('register') }}">Register</a>
+                {% if 'user_id' in session %}
+                    {% if session.user_role == 'admin' %}
+                        <a class="nav-link" href="{{ url_for('admin') }}">Admin</a>
+                    {% endif %}
+                    <span class="navbar-text me-3">Hello, {{ session.user_name }}</span>
+                    <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+                {% else %}
+                    <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                    <a class="nav-link" href="{{ url_for('register') }}">Register</a>
+                {% endif %}
             </div>
         </div>
     </nav>
 
-    <div class="container mt-5 mb-5">
+    <div class="container mt-4">
         <div class="row justify-content-center">
-            <div class="col-md-6">
-                <div class="card text-center">
-                    <div class="card-body p-5">
+            <div class="col-md-6 text-center">
+                <div class="card">
+                    <div class="card-body">
                         <div class="mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" fill="#28a745" class="bi bi-check-circle-fill" viewBox="0 0 16 16">
-                                <path d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z" />
+                            <svg xmlns="http://www.w3.org/2000/svg" width="80" height="80" fill="#28a745"
+                                class="bi bi-check-circle-fill" viewBox="0 0 16 16">
+                                <path
+                                    d="M16 8A8 8 0 1 1 0 8a8 8 0 0 1 16 0zm-3.97-3.03a.75.75 0 0 0-1.08.022L7.477 9.417 5.384 7.323a.75.75 0 0 0-1.06 1.06L6.97 11.03a.75.75 0 0 0 1.079-.02l3.992-4.99a.75.75 0 0 0-.01-1.05z" />
                             </svg>
                         </div>
                         <h2 class="mb-3">Thank You!</h2>
                         <p class="mb-4">We appreciate your feedback. Your comments help us improve our services.</p>
                         <p class="mb-4">✅ Thank you, please come again!</p>
-                        <a href="{{ url_for('index') }}" class="btn btn-success">Return to Home</a>
+                        <a href="{{ url_for('login') }}" class="btn btn-success">Return to Home</a>
                     </div>
                 </div>
             </div>
@@ -240,13 +249,13 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-column">
-                    <h3>Cropify</h3>
-                    <p>Your one-stop destination for fresh farm products directly from farmers to your doorstep.</p>o
+                    <h3>AgriMarketing</h3>
+                    <p>Your one-stop destination for fresh farm products directly from farmers to your doorstep.</p>
                     <div class="social-links">
-                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
-                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                        <a href="#" aria-label="Pinterest"><i class="fab fa-pinterest"></i></a>
+                        <a href="https://www.facebook.com/mr_parshwa_patil/"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://www.twitter.com/mr_parshwa_patil/"><i class="fab fa-twitter"></i></a>
+                        <a href="https://www.instagram.com/mr_parshwa_patil/"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-pinterest"></i></a>
                     </div>
                 </div>
                 <div class="footer-column">
@@ -254,7 +263,7 @@
                     <ul class="footer-links">
                         <li><a href="{{ url_for('index') }}">Home</a></li>
                         <li><a href="{{ url_for('product') }}">Products</a></li>
-                        <li><a href="{{ url_for('feedback_page') }}">Feedback</a></li>
+                        <li><a href="{{ url_for('feedback') }}">Feedback</a></li>
                         <li><a href="{{ url_for('login') }}">Login</a></li>
                         <li><a href="{{ url_for('register') }}">Register</a></li>
                     </ul>
@@ -270,36 +279,20 @@
                     </ul>
                 </div>
                 <div class="footer-column">
-                    <h3>Contact Info</h3>i>Patil Galli Borgaon</li>
+                    <h3>Contact Info</h3>
                     <ul class="contact-info">
-                        <li><i class="fas fa-map-marker-alt"></i> +91 7026670451</li>
-                        <li><i class="fas fa-phone"></i>agrimarketing@gmail.com</li>
-                        <li><i class="fas fa-envelope"></i> Mon-Sun: 9:00 AM - 11:00 PM</li>
-                        <li><i class="fas fa-clock"></i></li>
+                        <li><i class="fas fa-map-marker-alt"></i>Patil Galli Borgaon</li>
+                        <li><i class="fas fa-phone"></i> +91 7026670451</li>
+                        <li><i class="fas fa-envelope"></i>agrimarketing@gmail.com</li>
+                        <li><i class="fas fa-clock"></i> Mon-Sun: 9:00 AM - 11:00 PM</li>
                     </ul>
                 </div>
-            </div>
+
             <div class="copyright">
                 <p>&copy; 2024 Cropify. All rights reserved.</p>
             </div>
-        </div>
-    </footer>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            updateCartCount();
-        });
 
-        function getCart() {
-            return JSON.parse(localStorage.getItem('cropifyCart')) || [];
-        }
-
-        function updateCartCount() {
-            const cart = getCart();
-            const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
-            document.getElementById('cart-count').textContent = cartCount;
-        }
-    </script>
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

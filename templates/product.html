@@ -222,12 +222,19 @@
             <div class="navbar-nav me-auto">
                 <a class="nav-link" href="{{ url_for('index') }}">Home</a>
                 <a class="nav-link" href="{{ url_for('product') }}">Products</a>
-                <a class="nav-link" href="{{ url_for('feedback_page') }}">Feedback</a>
-                <a class="nav-link" href="{{ url_for('cart') }}">Cart <span id="cart-count" class="badge bg-light text-dark">0</span></a>
+                <a class="nav-link" href="{{ url_for('feedback') }}">Feedback</a>
             </div>
             <div class="navbar-nav">
-                <a class="nav-link" href="{{ url_for('login') }}">Login</a>
-                <a class="nav-link" href="{{ url_for('register') }}">Register</a>
+                {% if 'user_id' in session %}
+                    {% if session.user_role == 'admin' %}
+                        <a class="nav-link" href="{{ url_for('admin') }}">Admin</a>
+                    {% endif %}
+                    <span class="navbar-text me-3">Hello, {{ session.user_name }}</span>
+                    <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+                {% else %}
+                    <a class="nav-link" href="{{ url_for('login') }}">Login</a>
+                    <a class="nav-link" href="{{ url_for('register') }}">Register</a>
+                {% endif %}
             </div>
         </div>
     </nav>
@@ -238,13 +245,13 @@
                 <div class="list-group">
                     <a href="{{ url_for('product') }}" class="list-group-item list-group-item-action active">All
                         Products</a>
-                    <a href="{{ url_for('product', category='fruits') }}" class="list-group-item list-group-item-action">🍎
+                    <a href="{{ url_for('product') }}?category=fruits" class="list-group-item list-group-item-action">🍎
                         Fruits</a>
-                    <a href="{{ url_for('product', category='vegetables') }}"
+                    <a href="{{ url_for('product') }}?category=vegetables"
                         class="list-group-item list-group-item-action">🥦 Vegetables</a>
-                    <a href="{{ url_for('product', category='fertilizers') }}"
+                    <a href="{{ url_for('product') }}?category=fertilizers"
                         class="list-group-item list-group-item-action">🌱 Fertilizers</a>
-                    <a href="{{ url_for('product', category='pesticides') }}"
+                    <a href="{{ url_for('product') }}?category=pesticides"
                         class="list-group-item list-group-item-action">💊 Pesticides</a>
                 </div>
 
@@ -254,35 +261,75 @@
             </div>
 
             <div class="col-md-9">
-                <!-- Fruits Section -->
-                <div id="fruits-section">
-                    <h2 class="mb-3">🍎 Fruits</h2>
-                    <div class="row mb-4">
-                        <!-- Fruit products will be loaded here -->
-                    </div>
-                </div>
+                <h2>All Products</h2>
 
-                <!-- Vegetables Section -->
-                <div id="vegetables-section">
-                    <h2 class="mb-3">🥦 Vegetables</h2>
-                    <div class="row mb-4">
-                        <!-- Vegetable products will be loaded here -->
+                <div class="row">
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <img src="https://images.unsplash.com/photo-1568702846914-96b305d2aaeb?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+                                class="card-img-top product-image" alt="Organic Apples">
+                            <div class="card-body">
+                                <h5 class="card-title">Organic Apples</h5>
+                                <p class="card-text">Category: fruits</p>
+                                <p class="card-text">Price: ₹150</p>
+                                <p class="card-text">Quantity: 100 available</p>
+                                <p class="card-text"><small class="text-muted">Product ID: 101</small></p>
+                            </div>
+                            <div class="card-footer">
+                                <a href="{{ url_for('cart') }}" class="btn btn-success w-100">Add to Cart</a>
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Fertilizers Section -->
-                <div id="fertilizers-section">
-                    <h2 class="mb-3">🌱 Fertilizers</h2>
-                    <div class="row mb-4">
-                        <!-- Fertilizer products will be loaded here -->
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <img src="https://images.unsplash.com/photo-1566842600175-97dca3dfc3c7?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+                                class="card-img-top product-image" alt="Fresh Tomatoes">
+                            <div class="card-body">
+                                <h5 class="card-title">Fresh Tomatoes</h5>
+                                <p class="card-text">Category: vegetables</p>
+                                <p class="card-text">Price: ₹80</p>
+                                <p class="card-text">Quantity: 200 available</p>
+                                <p class="card-text"><small class="text-muted">Product ID: 102</small></p>
+                            </div>
+                            <div class="card-footer">
+                                <a href="{{ url_for('cart') }}" class="btn btn-success w-100">Add to Cart</a>
+                            </div>
+                        </div>
                     </div>
-                </div>
 
-                <!-- Pesticides Section -->
-                <div id="pesticides-section">
-                    <h2 class="mb-3">💊 Pesticides</h2>
-                    <div class="row mb-4">
-                        <!-- Pesticide products will be loaded here -->
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <img src="https://images.unsplash.com/photo-1585011658937-5a35db3c2b98?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+                                class="card-img-top product-image" alt="Organic Fertilizer">
+                            <div class="card-body">
+                                <h5 class="card-title">Organic Fertilizer</h5>
+                                <p class="card-text">Category: fertilizers</p>
+                                <p class="card-text">Price: ₹500</p>
+                                <p class="card-text">Quantity: 50 available</p>
+                                <p class="card-text"><small class="text-muted">Product ID: 103</small></p>
+                            </div>
+                            <div class="card-footer">
+                                <a href="{{ url_for('cart') }}" class="btn btn-success w-100">Add to Cart</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-4">
+                        <div class="card h-100">
+                            <img src="https://images.unsplash.com/photo-1589923188937-cb64779f4abe?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=80"
+                                class="card-img-top product-image" alt="Natural Pesticide">
+                            <div class="card-body">
+                                <h5 class="card-title">Natural Pesticide</h5>
+                                <p class="card-text">Category: pesticides</p>
+                                <p class="card-text">Price: ₹350</p>
+                                <p class="card-text">Quantity: 75 available</p>
+                                <p class="card-text"><small class="text-muted">Product ID: 104</small></p>
+                            </div>
+                            <div class="card-footer">
+                                <a href="{{ url_for('cart') }}" class="btn btn-success w-100">Add to Cart</a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -293,13 +340,13 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-column">
-                    <h3>Cropify</h3>
+                    <h3>AgriMarketing</h3>
                     <p>Your one-stop destination for fresh farm products directly from farmers to your doorstep.</p>
                     <div class="social-links">
-                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
-                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                        <a href="#" aria-label="Pinterest"><i class="fab fa-pinterest"></i></a>
+                        <a href="https://www.facebook.com/mr_parshwa_patil/"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://www.twitter.com/mr_parshwa_patil/"><i class="fab fa-twitter"></i></a>
+                        <a href="https://www.instagram.com/mr_parshwa_patil/"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-pinterest"></i></a>
                     </div>
                 </div>
                 <div class="footer-column">
@@ -307,7 +354,7 @@
                     <ul class="footer-links">
                         <li><a href="{{ url_for('index') }}">Home</a></li>
                         <li><a href="{{ url_for('product') }}">Products</a></li>
-                        <li><a href="{{ url_for('feedback_page') }}">Feedback</a></li>
+                        <li><a href="{{ url_for('feedback') }}">Feedback</a></li>
                         <li><a href="{{ url_for('login') }}">Login</a></li>
                         <li><a href="{{ url_for('register') }}">Register</a></li>
                     </ul>
@@ -331,117 +378,12 @@
                         <li><i class="fas fa-clock"></i> Mon-Sun: 9:00 AM - 11:00 PM</li>
                     </ul>
                 </div>
-            </div>
-            <div class="copyright">
-                <p>&copy; 2024 Cropify. All rights reserved.</p>
-            </div>
-        </div>
-    </footer>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            updateCartCount();
-            loadProducts();
-        });
 
-        function getCart() {
-            return JSON.parse(localStorage.getItem('cropifyCart')) || [];
-        }
+                <footer>
+                    <p>&copy; 2024 Cropify. All rights reserved.</p>
+                </footer>
 
-        function saveCart(cart) {
-            localStorage.setItem('cropifyCart', JSON.stringify(cart));
-        }
-
-        function updateCartCount() {
-            const cart = getCart();
-            const cartCount = cart.reduce((total, item) => total + item.quantity, 0);
-            document.getElementById('cart-count').textContent = cartCount;
-        }
-
-        function addToCart(button) {
-            const card = button.closest('.card');
-            const productId = card.dataset.productId;
-            const productName = card.dataset.productName;
-            const productPrice = parseFloat(card.dataset.productPrice);
-            const productImage = card.dataset.productImage;
-
-            const cart = getCart();
-            const existingItem = cart.find(item => item.id === productId);
-
-            if (existingItem) {
-                existingItem.quantity++;
-            } else {
-                cart.push({ id: productId, name: productName, price: productPrice, image: productImage, quantity: 1 });
-            }
-
-            saveCart(cart);
-            updateCartCount();
-
-            // Optional: Show a confirmation
-            alert(productName + ' has been added to your cart!');
-        }
-
-        async function loadProducts() {
-            try {
-                const response = await fetch('/api/products');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch products from the server.');
-                }
-                const products = await response.json();
-
-                // Get the container for each category
-                const sections = {
-                    fruits: document.querySelector('#fruits-section .row'),
-                    vegetables: document.querySelector('#vegetables-section .row'),
-                    fertilizers: document.querySelector('#fertilizers-section .row'),
-                    pesticides: document.querySelector('#pesticides-section .row')
-                };
-
-                // Clear any existing content
-                Object.values(sections).forEach(section => section.innerHTML = '');
-
-                products.forEach(product => {
-                    const container = sections[product.category];
-                    if (container) {
-                        const productCard = `
-                            <div class="col-md-4 mb-4">
-                                <div class="card h-100" 
-                                     data-product-id="${product.id}" 
-                                     data-product-name="${product.name}" 
-                                     data-product-price="${product.price}" 
-                                     data-product-image="${product.image || 'https://via.placeholder.com/500x300.png?text=No+Image'}">
-                                    <img src="${product.image || 'https://via.placeholder.com/500x300.png?text=No+Image'}"
-                                        class="card-img-top product-image" alt="${product.name}">
-                                    <div class="card-body">
-                                        <h5 class="card-title">${product.name}</h5>
-                                        <p class="card-text">Category: ${product.category}</p>
-                                        <p class="card-text">Price: ₹${product.price}</p>
-                                        <p class="card-text">Quantity: ${product.quantity} available</p>
-                                        <p class="card-text"><small class="text-muted">Product ID: ${product.id}</small></p>
-                                    </div>
-                                    <div class="card-footer">
-                                        <button class="btn btn-success w-100" onclick="addToCart(this)">Add to Cart</button>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-                        container.innerHTML += productCard;
-                    }
-                });
-
-                // Hide sections that have no products
-                Object.entries(sections).forEach(([key, section]) => {
-                    if (section.innerHTML.trim() === '') {
-                        document.getElementById(`${key}-section`).style.display = 'none';
-                    }
-                });
-
-            } catch (error) {
-                console.error('Error loading products:', error);
-                alert('Could not load products. Please ensure the backend server is running.');
-            }
-        }
-    </script>
+                <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 
 </html>

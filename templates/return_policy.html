@@ -15,7 +15,7 @@
             <div class="navbar-nav me-auto">
                 <a class="nav-link" href="{{ url_for('index') }}">Home</a>
                 <a class="nav-link" href="{{ url_for('product') }}">Products</a>
-                <a class="nav-link" href="{{ url_for('feedback_page') }}">Feedback</a>
+                <a class="nav-link" href="{{ url_for('feedback') }}">Feedback</a>
             </div>
             <div class="navbar-nav">
                 {% if 'user_id' in session %}
@@ -80,7 +80,7 @@
                     <ul class="footer-links">
                         <li><a href="{{ url_for('index') }}">Home</a></li>
                         <li><a href="{{ url_for('product') }}">Products</a></li>
-                        <li><a href="{{ url_for('feedback_page') }}">Feedback</a></li>
+                        <li><a href="{{ url_for('feedback') }}">Feedback</a></li>
                         <li><a href="{{ url_for('login') }}">Login</a></li>
                         <li><a href="{{ url_for('register') }}">Register</a></li>
                     </ul>
